@@ -1,0 +1,73 @@
+import numpy as np
+import pandas as pd
+
+# 设置中文输出时，列名对齐
+pd.set_option('display.unicode.ambiguous_as_wide', True)
+pd.set_option('display.unicode.east_asian_width', True)
+
+
+def get_diff_table(X, Y):
+    """
+    求差商表，返回差商矩阵
+    """
+    n = len(X)
+    F = np.zeros([n, n])
+
+    for i in range(0, n):
+        F[i][0] = Y[i]
+
+    for j in range(1, n):
+        for i in range(j, n):
+            F[i][j] = (F[i][j - 1] - F[i - 1][j - 1]) / (X[i] - X[i - j])
+
+    return F
+
+
+def newton_interpolation(X, Y, x, acc=None):
+    """
+    计算x点的插值
+    """
+    n = len(X)
+    result = Y[0]
+    diff_table = get_diff_table(X, Y)  # 获取差商矩阵
+
+    temp = 1.0
+    for i in range(1, n):
+        temp = temp * (x - X[i - 1])  # x的多项式
+        result += temp * diff_table[i, i]
+    if acc:
+        result = round(result, acc)
+    return result
+
+
+if __name__ == '__main__':
+    # X = [0.40, 0.55, 0.65, 0.80, 0.90, 1.05]
+    # Y = [0.41075, 0.57815, 0.69675, 0.88811, 1.02652, 1.25386]
+    # xs = [0.596]
+    # ys = []
+
+    X = [0.40, 0.55, 0.80, 0.90, 1.00]
+    Y = [0.41075, 0.57815, 0.88811, 1.02652, 1.17520]
+    xs = [0.5, 0.7, 0.85]
+    ys = []
+
+    F = get_diff_table(X, Y)  # 获取差商表
+    df = pd.DataFrame(F)
+
+    idx = ['xi', 'f(xi)']
+    for v in range(1, len(F)):
+        idx.append(str(v) + '阶差商')
+
+    df.insert(0, 'xi', X)
+    df.columns = idx
+
+    print('差商表为：')
+    print('=========================================================')
+    print(df)  # 展示插值表
+    print('=========================================================')
+
+    for x in xs:
+        ys.append(newton_interpolation(X, Y, x, 5))
+        # ys.append(newton_interpolation(X, Y, x))
+    print(xs, '三点处函数值分别为：')
+    print(ys)
